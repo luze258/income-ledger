@@ -1,4 +1,4 @@
-# 收益账本｜桌面版 v2.2.4
+# 收益账本｜桌面版 v2.2.5
 
 一个用于本地记录商品购入、库存、售出和收益的轻量桌面应用，适用于个人搬砖、二手倒卖及少量商品售卖场景。
 
@@ -30,7 +30,9 @@
 
 ## 项目状态
 
-当前版本：桌面版 v2.2.4
+当前版本：桌面版 v2.2.5
+
+v2.2.5 修复 GitHub Release 附件名称，统一使用跨平台兼容的英文安装包文件名。
 
 v2.2.4 修复 GitHub Release 工作流的版本标签校验，使自动发布可正确执行。
 
@@ -105,7 +107,7 @@ v2.2.0 新增独立库存页面、库存数量与变动流水、补货入库、�
 
 ### 安装桌面版（推荐）
 
-在 [Releases 页面](https://github.com/luze258/income-ledger/releases) 下载 Windows 安装包 `收益账本_x.x.x_x64-setup.exe` 后双击运行，按安装向导完成安装即可。
+在 [Releases 页面](https://github.com/luze258/income-ledger/releases) 下载 Windows 安装包 `income-ledger_x.x.x_x64-setup.exe` 后双击运行，按安装向导完成安装即可。
 
 升级时安装新版安装包即可，通常会保留本机数据库；但升级前仍建议在“设置”页面导出完整 JSON 备份。安装包当前未进行代码签名，Windows 如显示 SmartScreen 提示，请确认安装包来自本项目的 Releases 页面后，选择“更多信息”→“仍要运行”。
 

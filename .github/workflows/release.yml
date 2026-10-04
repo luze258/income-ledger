@@ -28,7 +28,16 @@ jobs:
             throw "发布标签应为 $expectedTag，实际为 $env:GITHUB_REF_NAME。"
           }
       - run: npm run tauri build
+      - name: Prepare a portable release asset name
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+          if ($null -eq $installer) {
+            throw '未找到 NSIS 安装包。'
+          }
+          $version = node -p "require('./package.json').version"
+          Copy-Item -LiteralPath $installer.FullName -Destination "src-tauri/target/release/bundle/nsis/income-ledger_$($version)_x64-setup.exe"
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: src-tauri/target/release/bundle/nsis/*-setup.exe
+          files: src-tauri/target/release/bundle/nsis/income-ledger_*-setup.exe
