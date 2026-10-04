@@ -1,7 +1,7 @@
 {
   "name": "income-ledger",
   "private": true,
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "本地优先的商品库存、交易与收益管理桌面应用。",
   "author": "路泽",
   "license": "MIT",

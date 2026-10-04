@@ -22,7 +22,8 @@ jobs:
       - name: Ensure tag matches the application version
         shell: pwsh
         run: |
-          $expectedTag = "v$(node -p \"require('./package.json').version\")"
+          $version = node -p "require('./package.json').version"
+          $expectedTag = "v$version"
           if ($env:GITHUB_REF_NAME -ne $expectedTag) {
             throw "发布标签应为 $expectedTag，实际为 $env:GITHUB_REF_NAME。"
           }
