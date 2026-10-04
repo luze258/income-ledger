@@ -1,0 +1,117 @@
+.chart-panel {
+  padding-bottom: 20px;
+}
+.chart-bars {
+  height: 190px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 14px;
+  padding: 10px 4px 0;
+}
+.chart-col {
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.chart-col small {
+  color: #829087;
+}
+.chart-value {
+  font-size: 10px;
+  color: #6d7b72;
+  min-height: 14px;
+}
+.chart-track {
+  height: 135px;
+  width: 100%;
+  max-width: 56px;
+  background: #f0f4f0;
+  border-radius: 8px 8px 3px 3px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.chart-track i {
+  display: block;
+  width: 100%;
+  background: linear-gradient(180deg, #79b982, #4e8f5b);
+  border-radius: 8px 8px 0 0;
+  min-height: 5px;
+}
+.category-chart {
+  margin-top: 0;
+}
+.category-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+}
+.category-track {
+  height: 10px;
+  background: #f0f4f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.category-track i {
+  display: block;
+  height: 100%;
+  background: #63a66d;
+  border-radius: 99px;
+}
+.category-track i.negative {
+  background: #cf7777;
+}
+.inventory-alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fffaf0;
+  border-color: #f1e1b7;
+}
+.inventory-alert h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+.inventory-alert p {
+  margin: 0;
+  color: #88754a;
+  font-size: 13px;
+}
+.alert-count,
+.ok-count {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+.alert-count {
+  background: #f5d28a;
+  color: #805d1e;
+}
+.ok-count {
+  background: #dcefe0;
+  color: #397049;
+}
+.custom-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -8px 0 20px;
+}
+.custom-range input {
+  width: auto;
+  margin: 0;
+  padding: 8px 10px;
+}
+.custom-range span {
+  color: #77847b;
+}

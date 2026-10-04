@@ -1,0 +1,57 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "收益账本",
+  "version": "../package.json",
+  "identifier": "com.incomeledger.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "收益账本",
+        "width": 800,
+        "height": 600,
+        "minWidth": 720,
+        "minHeight": 540,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "plugins": {
+    "sql": {
+      "preload": ["sqlite:income-ledger.db"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "路泽",
+    "homepage": "https://github.com/luze258/income-ledger",
+    "copyright": "Copyright © 2026 路泽",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "category": "Finance",
+    "shortDescription": "本地优先的商品库存、交易与收益管理工具。",
+    "longDescription": "收益账本帮助个人卖家管理商品购入、库存、售出交易、费用和收益。核心数据保存在本机，无需账号或云端同步。",
+    "windows": {
+      "nsis": {
+        "languages": ["SimpChinese"]
+      }
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
