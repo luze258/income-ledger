@@ -1006,3 +1006,24 @@ button.reminder-card:hover {
     align-items: flex-start;
   }
 }
+
+.finance-cards .card small {
+  color: var(--muted);
+}
+.finance-cards .card b {
+  font-size: 22px;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.app .hero strong:not(.loss) {
+  color: var(--accent-strong);
+}
+.finance-panel .outline {
+  color: var(--ink);
+  border-color: var(--line);
+}

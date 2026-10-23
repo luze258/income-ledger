@@ -1,8 +1,21 @@
+import {
+  defaultFinance,
+  validateFinance,
+  validateFinanceReferences,
+  validatePayment,
+} from './finance';
 import Database from '@tauri-apps/plugin-sql';
 import { invoke } from '@tauri-apps/api/core';
 import { DEFAULT_CATEGORIES } from './domain';
 import { normalizeImportedItem } from './importExport';
-import type { Backup, FeeTemplate, InventoryMovement, Item, ItemWrite } from './types';
+import type {
+  Backup,
+  FeeTemplate,
+  InventoryMovement,
+  Item,
+  ItemWrite,
+  FinanceState,
+} from './types';
 
 const DATABASE_URL = 'sqlite:income-ledger.db';
 const ITEMS_KEY = 'income-ledger-items';
@@ -25,6 +38,11 @@ type ItemRow = {
   platform_fee_cents: number | null;
   other_fee_cents: number | null;
   sale_date: string | null;
+  payment_status?: Item['paymentStatus'];
+  received_date?: string | null;
+  received_cents?: number | null;
+  settlement_expected_cents?: number | null;
+  settlement_reason?: string | null;
   platform: string | null;
   note: string | null;
   tags_json: string;
@@ -52,7 +70,7 @@ type InventoryMovementRow = {
 };
 
 const ITEM_COLUMNS = `id,name,category,purchase_cents,quantity,purchase_date,status,expected_sale_cents,sale_cents,
-  shipping_cents,platform_fee_cents,other_fee_cents,sale_date,platform,note,tags_json,created_at,deleted_at`;
+  shipping_cents,platform_fee_cents,other_fee_cents,sale_date,platform,note,tags_json,created_at,deleted_at,payment_status,received_date,received_cents,settlement_expected_cents,settlement_reason`;
 
 export const isTauriRuntime = () =>
   typeof window !== 'undefined' &&
@@ -61,26 +79,58 @@ let databasePromise: Promise<Database> | null = null;
 let activeBackend: StorageBackend = isTauriRuntime() ? 'sqlite' : 'localStorage';
 const getDatabase = () => (databasePromise ??= Database.load(DATABASE_URL));
 
+let localReadFailure: Error | null = null;
+
 function readJson<T>(key: string, fallback: T): T {
   try {
+    const checked = (value: unknown): T => {
+      if (
+        Array.isArray(fallback)
+          ? !Array.isArray(value)
+          : !value || typeof value !== 'object' || Array.isArray(value)
+      )
+        throw new Error('数据结构不正确');
+      return value as T;
+    };
     const bundled = localStorage.getItem('income-ledger-state-v2');
-    if (bundled) {
-      const value = JSON.parse(bundled);
+    if (bundled !== null) {
+      const value: unknown = JSON.parse(bundled);
+      if (!value || typeof value !== 'object' || Array.isArray(value))
+        throw new Error('合并账本数据结构不正确');
       const field =
-        key === ITEMS_KEY ? 'items' : key === CATEGORIES_KEY ? 'categories' : 'templates';
-      if (field in value) return value[field] as T;
+        key === ITEMS_KEY
+          ? 'items'
+          : key === CATEGORIES_KEY
+            ? 'categories'
+            : key === INVENTORY_MOVEMENTS_KEY
+              ? 'inventoryMovements'
+              : key === 'income-ledger-finance'
+                ? 'finance'
+                : 'templates';
+      if (Object.prototype.hasOwnProperty.call(value, field))
+        return checked((value as Record<string, unknown>)[field]);
     }
     const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
+    return raw === null ? fallback : checked(JSON.parse(raw));
+  } catch (error) {
+    localReadFailure = new Error(
+      `浏览器账本读取失败（${key}），已停止操作以保留原数据：${error instanceof Error ? error.message : String(error)}`,
+    );
+    throw localReadFailure;
   }
 }
-function commitLocal(data: Partial<Pick<Backup, 'items' | 'categories' | 'templates'>>) {
+function commitLocal(
+  data: Partial<
+    Pick<Backup, 'items' | 'categories' | 'templates' | 'finance' | 'inventoryMovements'>
+  >,
+) {
+  if (localReadFailure) throw localReadFailure;
   const state = {
     items: readJson<Item[]>(ITEMS_KEY, []),
     categories: readJson<string[]>(CATEGORIES_KEY, DEFAULT_CATEGORIES),
     templates: readJson<FeeTemplate[]>(TEMPLATES_KEY, []),
+    inventoryMovements: readJson<InventoryMovement[]>(INVENTORY_MOVEMENTS_KEY, []),
+    finance: readJson<FinanceState>('income-ledger-finance', defaultFinance()),
     ...data,
   };
   localStorage.setItem('income-ledger-state-v2', JSON.stringify(state));
@@ -102,13 +152,15 @@ export async function restoreBackup(backup: Backup) {
     categories: backup.categories,
     templates: backup.templates,
     inventoryMovements: backup.inventoryMovements ?? [],
+    finance: backup.finance ?? defaultFinance(),
   };
+  validateFinanceReferences(data.finance, backup.items);
   if (activeBackend === 'sqlite') await invoke('commit_data', { data });
   else {
     const localItems: Item[] = items.map((item) =>
       item.imageData === null ? (({ imageData: _, ...rest }) => rest)(item) : item,
     );
-    commitLocal({ items: localItems, categories: data.categories, templates: data.templates });
+    commitLocal({ ...data, items: localItems });
     localStorage.setItem(INVENTORY_MOVEMENTS_KEY, JSON.stringify(data.inventoryMovements));
   }
 }
@@ -125,11 +177,14 @@ export async function changeItemCategories(ids: string[], category: string) {
 
 function readLocalItems() {
   const values = readJson<unknown[]>(ITEMS_KEY, []);
-  return values.flatMap((value) => {
+  return values.map((value, index) => {
     try {
-      return [normalizeImportedItem(value)];
-    } catch {
-      return [];
+      return normalizeImportedItem(value);
+    } catch (error) {
+      localReadFailure = new Error(
+        `浏览器账本第 ${index + 1} 条商品数据无效，已停止操作以保留原数据：${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw localReadFailure;
     }
   });
 }
@@ -155,6 +210,11 @@ function rowToItem(row: ItemRow): Item {
     platformFeeCents: row.platform_fee_cents ?? undefined,
     otherFeeCents: row.other_fee_cents ?? undefined,
     saleDate: row.sale_date ?? undefined,
+    paymentStatus: row.status === 'sold' ? (row.payment_status ?? 'historical') : undefined,
+    receivedDate: row.received_date ?? undefined,
+    receivedCents: row.received_cents ?? undefined,
+    settlementExpectedCents: row.settlement_expected_cents ?? undefined,
+    settlementReason: row.settlement_reason ?? undefined,
     platform: row.platform ?? undefined,
     note: row.note ?? undefined,
     tags,
@@ -281,6 +341,7 @@ export async function initializeStorage(): Promise<{
 }
 
 export async function persistItem(item: ItemWrite) {
+  validatePayment(item);
   if (activeBackend === 'sqlite') return invoke('upsert_item', { record: item });
   const items = readLocalItems();
   const index = items.findIndex((x) => x.id === item.id);
@@ -305,6 +366,8 @@ export async function recordInventoryMovement(
     });
     return;
   }
+  validatePayment(item);
+  if (soldItem) validatePayment(soldItem);
   const items = readLocalItems();
   const index = items.findIndex((value) => value.id === item.id);
   if (index < 0) throw new Error('找不到需要变动库存的商品');
@@ -313,8 +376,7 @@ export async function recordInventoryMovement(
   items[index] = localItem;
   if (soldItem) items.unshift(soldItem);
   const movements = readJson<InventoryMovement[]>(INVENTORY_MOVEMENTS_KEY, []);
-  localStorage.setItem(INVENTORY_MOVEMENTS_KEY, JSON.stringify([movement, ...movements]));
-  writeJson(ITEMS_KEY, items);
+  commitLocal({ items, inventoryMovements: [movement, ...movements] });
 }
 
 export async function replacePersistedItems(items: Item[]) {
@@ -368,4 +430,31 @@ export async function saveFeeTemplates(templates: FeeTemplate[]) {
   if (activeBackend === 'sqlite') {
     await invoke('commit_data', { data: { templates } });
   } else writeJson(TEMPLATES_KEY, templates);
+}
+
+export async function loadFinance(): Promise<FinanceState> {
+  if (activeBackend !== 'sqlite')
+    return validateFinance(readJson('income-ledger-finance', defaultFinance()));
+  const rows = await (
+    await getDatabase()
+  ).select<Array<{ value: string }>>('SELECT value FROM ledger_finance WHERE id=1');
+  return rows[0]?.value ? validateFinance(JSON.parse(rows[0].value)) : defaultFinance();
+}
+/** 资金记录和售后库存变化一同提交，避免恢复库存后丢失售后记录。 */
+export async function saveFinance(finance: FinanceState, changedItems: Item[] = []) {
+  validateFinance(finance);
+  changedItems.forEach(validatePayment);
+  if (activeBackend === 'sqlite') {
+    await invoke('commit_data', {
+      data: { finance, ...(changedItems.length ? { itemUpdates: changedItems } : {}) },
+    });
+  } else {
+    const items = readLocalItems();
+    for (const item of changedItems) {
+      const index = items.findIndex((i) => i.id === item.id);
+      if (index < 0) items.unshift(item);
+      else items[index] = item;
+    }
+    commitLocal({ finance, items });
+  }
 }

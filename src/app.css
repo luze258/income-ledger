@@ -1,0 +1,1531 @@
+/* Formal ledger presentation. Stored appearance overrides remain authoritative. */
+.app.ledger-app {
+  font-size: 14px;
+  --phase2-radius: 10px;
+}
+.ledger-app .logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 20px;
+  color: var(--sidebar);
+}
+.ledger-app main {
+  max-width: 1530px;
+  padding: 28px 34px;
+}
+.ledger-app main > header {
+  margin-bottom: 26px;
+  gap: 18px;
+}
+.ledger-app main > header h1 {
+  font-size: 28px;
+  letter-spacing: -0.6px;
+}
+.ledger-app main > header p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.ledger-app button {
+  transition:
+    background-color 140ms,
+    color 140ms,
+    box-shadow 140ms;
+}
+.ledger-app :is(button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.ledger-app .panel {
+  border: 1px solid var(--line);
+  box-shadow: none;
+  border-radius: var(--phase2-radius);
+}
+.phase2-dashboard .dashboard-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin: 0;
+}
+.phase2-dashboard .dashboard-metrics .card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 7px 0 9px;
+  align-items: flex-start;
+}
+.phase2-dashboard .dashboard-metrics .card b {
+  font-size: clamp(24px, 2.6vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.8px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.phase2-dashboard .dashboard-metrics .card small {
+  font-size: 13px;
+  color: var(--muted);
+}
+.phase2-dashboard .dashboard-metrics .card > span {
+  background: transparent;
+  color: var(--accent);
+  padding: 0;
+  opacity: 0.65;
+}
+.phase2-dashboard .dashboard-metrics .card svg {
+  width: 18px;
+  height: 18px;
+}
+.metric-notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.phase2-secondary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+  padding: 24px 0;
+}
+.phase2-secondary > div {
+  min-width: 0;
+}
+.phase2-secondary small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.phase2-secondary b {
+  display: block;
+  margin: 8px 0 6px;
+  font-size: 21px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.phase2-secondary span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.phase2-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 22px;
+  align-items: start;
+}
+.phase2-workspace > .panel {
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+}
+.phase2-dashboard .panel-head {
+  align-items: start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.phase2-dashboard .panel-title h2 {
+  font-size: 16px;
+}
+.phase2-dashboard .panel-title span {
+  font-size: 12px;
+}
+.phase2-table-scroll {
+  overflow-x: auto;
+}
+.phase2-records table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+  font-size: 13px;
+}
+.phase2-records th {
+  font-weight: 400;
+  color: var(--muted);
+  text-align: left;
+}
+.phase2-records :is(th, td) {
+  border-bottom: 1px solid var(--line);
+  padding: 15px 8px;
+}
+.phase2-records td:first-child {
+  width: 30%;
+  overflow-wrap: anywhere;
+  max-width: 240px;
+}
+.phase2-records td b {
+  font-weight: 550;
+}
+.phase2-records td small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 5px;
+}
+.phase2-records td:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+}
+.phase2-row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+}
+.phase2-row-actions button {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.phase2-status {
+  display: inline-block;
+  font-size: 12px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+.phase2-status.warning {
+  color: #9b5814;
+  background: color-mix(in srgb, #ce8e24 15%, var(--surface));
+}
+.phase2-queue .reminder-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.phase2-queue .reminder-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 10px;
+  padding: 16px 0;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+}
+.phase2-queue .reminder-card b {
+  font-size: 22px;
+  grid-column: 2;
+  grid-row: 1/3;
+  font-weight: 550;
+}
+.phase2-queue .reminder-card small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.phase2-queue .reminder-card:hover {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+.phase2-boundary {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 16px 0 24px;
+}
+.phase2-dashboard .goal-summary {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.phase2-dashboard .chart-panel {
+  margin-top: 12px;
+}
+.phase2-products {
+  padding: 22px;
+}
+.phase2-products .filter-toolbar-wrap {
+  margin-bottom: 12px;
+}
+.phase2-products .filter-actions {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  gap: 14px;
+}
+.phase2-products .product {
+  padding: 20px 0;
+  gap: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.phase2-products .product .grow b {
+  font-weight: 550;
+  font-size: 14px;
+}
+.phase2-products .product .grow small {
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.phase2-products .result {
+  font-size: 19px;
+  min-width: 100px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.phase2-products .result small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.phase2-products .product > button {
+  padding: 7px 11px;
+  font-size: 13px;
+}
+.phase2-products .advanced-filter-panel {
+  animation: phase2-reveal 160ms ease-out;
+}
+.ledger-app .modal:has(.phase2-item-form) {
+  width: min(620px, 100%);
+  padding: 28px;
+  animation: phase2-reveal 160ms ease-out;
+}
+.phase2-item-form label {
+  line-height: 1.6;
+}
+.phase2-item-form input {
+  min-height: 42px;
+}
+.ledger-app .phase2-item-form .supplementary-fields {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+.phase2-item-form .full {
+  margin-top: 20px;
+  min-height: 44px;
+}
+@keyframes phase2-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .ledger-app[data-theme='system'] {
+    --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  }
+  .ledger-app[data-theme='system'] .phase2-status.warning {
+    color: #f3c485;
+  }
+}
+@media (max-width: 1150px) {
+  .phase2-workspace {
+    grid-template-columns: 1fr;
+  }
+  .phase2-queue .reminder-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .phase2-secondary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .ledger-app main {
+    padding: 22px 16px;
+  }
+  .ledger-app main > header {
+    align-items: center;
+  }
+  .ledger-app main > header h1 {
+    font-size: 25px;
+  }
+  .phase2-dashboard .dashboard-metrics {
+    gap: 12px;
+  }
+  .phase2-dashboard .dashboard-metrics .card > span {
+    display: none;
+  }
+  .metric-notes {
+    gap: 12px;
+    font-size: 11px;
+  }
+  .phase2-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+  .phase2-queue .reminder-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .phase2-products {
+    padding: 16px;
+  }
+  .phase2-products .product {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .phase2-products .product .grow {
+    flex-basis: calc(100% - 105px);
+  }
+  .phase2-products .result {
+    text-align: left;
+  }
+  .ledger-app .modal:has(.phase2-item-form) {
+    padding: 20px;
+  }
+  .phase2-item-form :is(.two, .three) {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .ledger-app .backdrop {
+    padding: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .phase2-dashboard .dashboard-metrics {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .metric-notes {
+    display: none;
+  }
+  .phase2-dashboard .dashboard-metrics .card {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .phase2-dashboard .dashboard-metrics .card b {
+    font-size: 32px;
+  }
+  .phase2-dashboard .dashboard-metrics .card:nth-child(1) small:after {
+    content: ' · 按售出日，含待回款';
+  }
+  .phase2-dashboard .dashboard-metrics .card:nth-child(2) small:after {
+    content: ' · 按到账及售后调整日';
+  }
+  .phase2-dashboard .dashboard-metrics .card:nth-child(3) small:after {
+    content: ' · 库存成本 + 待回款本金';
+  }
+  .phase2-secondary {
+    grid-template-columns: 1fr;
+  }
+  .phase2-secondary > div {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
+  }
+  .ledger-app .filter-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .phase2-products :is(.filter-actions, .batch-bar, .saved-filter-actions, .quick-views) {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .phase2-products :is(input, select) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .ledger-app .modal {
+    width: 100%;
+    max-width: 100%;
+  }
+  .ledger-app :is(.two, .three) {
+    min-width: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ledger-app *,
+  .ledger-app *:before,
+  .ledger-app *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.ledger-app main {
+  max-width: 1320px;
+}
+.phase2-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.phase2-header-actions .primary {
+  order: -1;
+}
+.phase2-dashboard
+  :is(
+    .metric-notes,
+    .phase2-boundary,
+    .phase2-secondary small,
+    .phase2-secondary span,
+    .panel-title span,
+    .phase2-records td small,
+    .phase2-status,
+    .phase2-queue .reminder-card small
+  ),
+.phase2-products .product .grow small {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.phase2-secondary b {
+  font-size: 22px;
+}
+.phase2-records table {
+  min-width: 650px;
+}
+.phase2-products .product {
+  display: grid;
+  grid-template-columns: 18px 48px minmax(0, 1fr) auto auto auto;
+}
+.phase2-products .product:has(> .result):has(> button:not([aria-label])) {
+  grid-template-columns: 18px 48px minmax(0, 1fr) auto auto auto auto;
+}
+.phase2-products .product .thumb {
+  width: 48px;
+  height: 48px;
+}
+@media (max-width: 1100px) and (min-width: 761px) {
+  .ledger-app .filter-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .phase2-products .product {
+    gap: 10px;
+  }
+}
+@media (max-width: 760px) {
+  .phase2-products .product {
+    display: flex;
+  }
+  .phase2-products .product > button {
+    min-height: 40px;
+  }
+  .phase2-header-actions button {
+    min-height: 44px;
+  }
+}
+.ledger-app {
+  --muted: #5e6974;
+}
+@media (prefers-color-scheme: dark) {
+  .ledger-app[data-theme='system'] {
+    --muted: #b4c2b8;
+  }
+}
+
+.phase2-dashboard .panel-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+/* System dark uses readable derived foregrounds without changing saved colors. */
+@media (prefers-color-scheme: dark) {
+  .app.ledger-app[data-theme='system'] {
+    --phase2-accent-ink: color-mix(in srgb, var(--accent) 28%, #fff);
+  }
+  .app.ledger-app[data-theme='system'] :is(.outline, .text-button, .file-button, .reminder-card b) {
+    color: var(--phase2-accent-ink);
+  }
+  .app.ledger-app[data-theme='system'] :is(.outline, .file-button) {
+    border-color: color-mix(in srgb, var(--accent) 35%, #c2d3d6);
+  }
+  .app.ledger-app[data-theme='system'] .dashboard-metrics .card > span {
+    color: var(--phase2-accent-ink);
+    opacity: 1;
+  }
+  .app.ledger-app[data-theme='system'] .gain {
+    color: #a4dcb9;
+  }
+  .app.ledger-app[data-theme='system'] .loss {
+    color: #ffb6b0;
+  }
+  .app.ledger-app[data-theme='system'] :is(button, input, select, textarea, summary):focus-visible {
+    outline-color: var(--phase2-accent-ink);
+  }
+}
+/* The 15 dashboard lint findings: 3 panel notes, 6 chart values, 6 month labels. */
+.app.ledger-app .phase2-dashboard :is(.panel-title span, .chart-value, .chart-col small) {
+  color: var(--muted);
+}
+
+.phase2-scroll-hint {
+  display: none;
+}
+.phase2-table-scroll:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .phase2-records table {
+    min-width: 800px;
+  }
+  .phase2-records :is(th, td):nth-child(2),
+  .phase2-records :is(th, td):nth-child(3),
+  .phase2-records :is(th, td):nth-child(4) {
+    white-space: nowrap;
+  }
+  .phase2-scroll-hint {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .app.ledger-app[data-theme='system'] .phase2-table-scroll:focus-visible {
+    outline-color: var(--phase2-accent-ink);
+  }
+}
+
+/* Formal theme and shared presentation tokens. Saved accent/sidebar remain inline. */
+.app.ledger-app {
+  --sidebar-ink: #fff;
+  --sidebar-muted: #fff;
+  --gain: #1d6a46;
+  --negative: #a52a35;
+  --warning: #865000;
+}
+.app.ledger-app[data-theme='blue'] {
+  --surface: #fff;
+  --canvas: #f4f7fc;
+  --ink: #202a38;
+  --muted: #596579;
+  --line: #d7dfe9;
+  --accent-soft: color-mix(in srgb, var(--accent) 9%, #fff);
+}
+.app.ledger-app .sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  padding: 25px 16px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--line);
+}
+.app.ledger-app .sidebar :is(.brand, nav button, .subnav button, .mobile-menu) {
+  color: var(--sidebar-ink);
+}
+.app.ledger-app .sidebar :is(.brand small, .side-note, nav details summary) {
+  color: var(--sidebar-muted);
+  font-size: 13px;
+}
+.app.ledger-app .sidebar .brand {
+  margin-bottom: 24px;
+  gap: 10px;
+}
+.app.ledger-app .sidebar nav[aria-label] {
+  gap: 6px;
+  flex-shrink: 0;
+}
+.app.ledger-app .sidebar nav[aria-label] details summary {
+  min-height: 44px;
+  padding: 10px 12px;
+  gap: 10px;
+  color: var(--sidebar-ink);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.app.ledger-app .sidebar nav[aria-label] summary span {
+  flex: 1;
+}
+.app.ledger-app .sidebar nav[aria-label] svg {
+  flex-shrink: 0;
+}
+.app.ledger-app .sidebar details[open] summary .nav-group-icon {
+  transform: none;
+}
+.app.ledger-app .sidebar nav[aria-label] details[open] summary {
+  color: var(--sidebar-ink);
+  font-weight: 700;
+}
+.app.ledger-app .sidebar .subnav {
+  padding: 4px 0 8px 36px;
+  gap: 2px;
+}
+.app.ledger-app .sidebar nav[aria-label] button {
+  min-height: 44px;
+  padding: 10px 12px;
+  gap: 10px;
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: 7px;
+}
+.app.ledger-app .sidebar nav[aria-label] .subnav button {
+  min-height: 40px;
+  padding: 9px 10px;
+  font-size: 14px;
+  font-weight: 400;
+}
+.app.ledger-app .sidebar nav[aria-label] button:is(:hover, .active),
+.app.ledger-app .sidebar nav[aria-label] summary:hover {
+  background: color-mix(in srgb, var(--sidebar) 82%, var(--sidebar-ink));
+  color: var(--sidebar-ink);
+}
+.app.ledger-app .sidebar nav[aria-label] button.active {
+  box-shadow: inset 3px 0 var(--accent);
+  font-weight: 700;
+}
+.app.ledger-app .sidebar .logo {
+  background: var(--accent);
+  color: #fff;
+}
+.app.ledger-app .sidebar nav[aria-label] .trash-nav {
+  min-height: 50px;
+  border: 1px solid color-mix(in srgb, var(--sidebar-ink) 30%, var(--sidebar));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--sidebar) 94%, var(--sidebar-ink));
+  margin-top: 16px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.app.ledger-app .sidebar .trash-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sidebar) 82%, var(--sidebar-ink));
+  color: var(--sidebar-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.app.ledger-app[data-theme='blue'] .sidebar nav button.active {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.app.ledger-app[data-theme='blue'] .sidebar nav :is(details[open], .current-group) summary {
+  color: var(--accent-strong);
+}
+.app.ledger-app[data-theme='blue'] .sidebar nav .trash-nav {
+  border-color: #b9cce3;
+  background: #edf3fb;
+}
+.app.ledger-app[data-theme='blue'] .sidebar nav .trash-nav:is(:hover, .active) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.app.ledger-app[data-theme='blue'] .sidebar .trash-count {
+  background: var(--accent);
+  color: var(--button-ink);
+}
+.app.ledger-app :is(.panel-title, .panel-head) {
+  gap: 12px;
+}
+.app.ledger-app .panel-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+.app.ledger-app .panel-title :is(h2, span) {
+  margin: 0;
+}
+.app.ledger-app .panel-title span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.app.ledger-app
+  :is(
+    button,
+    label,
+    input,
+    select,
+    textarea,
+    small,
+    .filter-actions .outline,
+    .theme-choice,
+    .period-tabs button,
+    .pagination,
+    .report-head,
+    .report-row
+  ) {
+  font-size: 13px;
+}
+.app.ledger-app .gain {
+  color: var(--gain);
+}
+.app.ledger-app .loss {
+  color: var(--negative);
+}
+.app.ledger-app :is(.text-button, .outline, .reminder-card b) {
+  color: var(--accent);
+}
+.app.ledger-app :is(input, select, textarea) {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--muted) 70%, var(--surface));
+}
+.app.ledger-app :is(input, textarea)::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.app.ledger-app .theme-swatch.blue {
+  background: #245ea8;
+}
+.app.ledger-app .chart-track i {
+  background: var(--accent);
+}
+@media (prefers-color-scheme: dark) {
+  .app.ledger-app[data-theme='system'] {
+    --gain: #a4dcb9;
+    --negative: #ffb6b0;
+    --warning: #f3c485;
+  }
+  .app.ledger-app[data-theme='system'] :is(.text-button, .outline, .reminder-card b) {
+    color: var(--phase2-accent-ink);
+  }
+}
+@media (max-width: 1100px) and (min-width: 761px) {
+  .app.ledger-app .sidebar {
+    width: 210px;
+  }
+}
+@media (max-width: 760px) {
+  .app.ledger-app .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    padding: 14px 18px;
+  }
+  .app.ledger-app .sidebar .brand {
+    margin: 0;
+  }
+}
+/* Region 2: classify and prepare a sale without mixing draft fields and saved templates. */
+.ledger-app .settings-categories .inline-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto;
+  gap: 12px;
+  padding: 18px;
+  background: var(--canvas);
+  border-radius: 8px;
+}
+.ledger-app .settings-categories .chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+.ledger-app .settings-templates .template-form {
+  padding: 20px;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+.ledger-app .settings-templates .row {
+  padding: 20px 0;
+}
+.ledger-app .phase2-item-form .supplementary-fields summary {
+  cursor: pointer;
+  padding: 8px 0;
+  color: var(--muted);
+}
+/* Region 3: assets above, stock attention separate, exact quantity beside record actions. */
+.ledger-app .inventory-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.ledger-app .inventory-cards .card {
+  box-shadow: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.ledger-app .inventory-overview-summary {
+  padding: 18px;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.ledger-app .inventory-overview .row {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+.ledger-app .inventory-cost {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.ledger-app .inventory-filter-toolbar {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.5fr) repeat(2, minmax(130px, 1fr));
+  gap: 12px;
+  background: var(--canvas);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.ledger-app .inventory-list .row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto auto auto auto;
+  gap: 12px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.ledger-app .inventory-row-amount {
+  min-width: 115px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ledger-app .inventory-list .row small {
+  display: block;
+  line-height: 1.6;
+  margin-top: 5px;
+  color: var(--muted);
+}
+.ledger-app .inventory-history .row {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.ledger-app .inventory-history .inventory-movement-dot {
+  color: var(--ink);
+  background: var(--canvas);
+}
+.ledger-app .modal:has(.ledger-quantity-form) {
+  width: min(620px, 100%);
+}
+.ledger-app .ledger-quantity-form > p {
+  color: var(--muted);
+  line-height: 1.6;
+  padding: 12px;
+  background: var(--canvas);
+  border-radius: 8px;
+}
+/* Region 4: overview, receipt filters and after-sale actions have separate visual scopes. */
+.ledger-app .region-heading {
+  margin-bottom: 20px;
+}
+.ledger-app .region-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.5;
+}
+.ledger-app .region-heading p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.ledger-app .finance-panel .panel-head {
+  align-items: flex-start;
+  gap: 16px;
+}
+.ledger-app .finance-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.ledger-app .finance-cards .card {
+  padding: 18px;
+  box-shadow: none;
+  border-color: var(--line);
+}
+.ledger-app .finance-panel > p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.ledger-app .calculation-notes {
+  padding: 16px;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 18px 0;
+}
+.ledger-app .calculation-notes summary {
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+.ledger-app .calculation-notes p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+.ledger-app .finance-panel .period-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--canvas);
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.ledger-app .period-tabs button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 9px 13px;
+}
+.ledger-app .period-tabs button.selected {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ledger-app .finance-panel .row {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ledger-app .finance-panel .row .grow {
+  flex: 1 1 260px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ledger-app .finance-panel .row small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  margin-top: 6px;
+}
+.ledger-app .finance-panel .row > span {
+  font-variant-numeric: tabular-nums;
+}
+.ledger-app .finance-after-sales > .inline-form {
+  background: var(--canvas);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  align-items: end;
+}
+.ledger-app .modal .warning-box {
+  padding: 14px;
+  border-radius: 8px;
+  line-height: 1.7;
+}
+/* Region 5: period controls, summary, breakdown and report remain distinct. */
+.ledger-app .region-stats .period-statistics {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+}
+.ledger-app .region-stats .stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 0;
+}
+.ledger-app .region-stats .stat-grid .card {
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.ledger-app .region-stats h3 {
+  font-size: 16px;
+  margin: 24px 0 12px;
+}
+.ledger-app .category-income-row {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+  gap: 14px;
+}
+.ledger-app .category-income-row small {
+  color: var(--muted);
+  margin-top: 5px;
+  display: block;
+}
+.ledger-app .report-table {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 24px;
+}
+.ledger-app :is(.report-head, .report-row) {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr;
+  min-width: 650px;
+  gap: 16px;
+  padding: 16px;
+}
+.ledger-app .report-head {
+  background: var(--canvas);
+  color: var(--muted);
+}
+.ledger-app .report-row {
+  border-top: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.ledger-app .ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.ledger-app .ranking-grid > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+}
+.ledger-app .rank-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ledger-app .rank-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* Region 6: appearance is a choice; backup and irreversible actions remain visible. */
+.ledger-app .region-settings {
+  display: grid;
+  gap: 22px;
+}
+.ledger-app .region-settings > .panel {
+  margin: 0;
+}
+.ledger-app .theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+.ledger-app .theme-choice {
+  justify-content: flex-start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.ledger-app .theme-choice.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.ledger-app .accent-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 480px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ledger-app .backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.ledger-app .region-settings .muted {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 12px 0;
+}
+.ledger-app .region-recycle .batch-bar {
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+}
+.ledger-app .region-recycle .product {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto auto;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ledger-app .region-recycle .product small {
+  display: block;
+  color: var(--muted);
+  line-height: 1.8;
+  margin-top: 5px;
+}
+.ledger-app .danger {
+  color: var(--negative);
+  border-color: var(--negative);
+  background: var(--surface);
+}
+.ledger-app :is(.report-table, .phase2-table-scroll):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 1100px) {
+  .ledger-app :is(.inventory-cards, .finance-cards) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ledger-app .inventory-list .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .ledger-app .inventory-list .row .grow {
+    flex: 1 1 200px;
+  }
+}
+@media (max-width: 760px) {
+  .ledger-app
+    :is(
+      .inventory-cards,
+      .finance-cards,
+      .ranking-grid,
+      .region-stats .stat-grid,
+      .theme-grid,
+      .settings-templates .template-form,
+      .inventory-filter-toolbar
+    ) {
+    grid-template-columns: 1fr;
+  }
+  .ledger-app .theme-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ledger-app .region-heading h2 {
+    font-size: 17px;
+  }
+  .ledger-app .finance-panel :is(.panel-head, .inline-form, .page-actions) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .ledger-app .finance-panel :is(.page-search, .inline-form label, .inline-form select) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .ledger-app .finance-panel .row .grow {
+    flex-basis: 100%;
+  }
+  .ledger-app .finance-panel .row > button {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+  .ledger-app .inventory-overview .row {
+    flex-wrap: wrap;
+  }
+  .ledger-app .inventory-overview .row .grow {
+    flex-basis: calc(100% - 70px);
+  }
+  .ledger-app .inventory-cost {
+    width: 100%;
+    text-align: right;
+  }
+  .ledger-app .ledger-quantity-form :is(.two, .three) {
+    grid-template-columns: 1fr;
+  }
+  .ledger-app .inventory-list .row .grow {
+    flex-basis: calc(100% - 70px);
+  }
+  .ledger-app .inventory-list .row button {
+    min-height: 44px;
+    flex: 1 1 auto;
+  }
+  .ledger-app .category-income-row {
+    flex-wrap: wrap;
+  }
+  .ledger-app .region-recycle .product {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .ledger-app .region-recycle .product button {
+    min-height: 44px;
+  }
+  .ledger-app .backup-actions > * {
+    flex: 1 1 100%;
+    text-align: center;
+    justify-content: center;
+  }
+  .ledger-app .region-settings .three {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Final design roles: contrast-safe controls, state words and explicit amount signs. */
+.app.ledger-app {
+  --control-line: #7b899d;
+  --accent-ink: var(--custom-accent-ink, var(--accent));
+  --focus: var(--accent-ink);
+  --selected-ink: var(--ink);
+  --warning-soft: #fff1d8;
+  --gain-soft: #eaf4ed;
+}
+.app.ledger-app[data-theme='blue'] {
+  --focus: #1d4ed8;
+  --selected-ink: var(--custom-accent-ink, var(--accent-strong));
+}
+.app.ledger-app .primary,
+.app.ledger-app .period-tabs button.selected {
+  color: var(--button-ink, #fff);
+}
+.app.ledger-app :is(.text-button, .outline, .reminder-card b) {
+  color: var(--accent-ink);
+}
+.app.ledger-app .outline {
+  border-color: var(--accent-ink);
+}
+.app.ledger-app :is(input, select, textarea) {
+  border-color: var(--control-line);
+  min-height: 40px;
+}
+.app.ledger-app
+  :is(button, input, select, textarea, summary, .report-table, .phase2-table-scroll):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.app.ledger-app .phase2-status.warning {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+.app.ledger-app .inventory-quantity-change {
+  color: var(--ink);
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.app.ledger-app .modal {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  width: min(620px, 100%);
+}
+.app.ledger-app .modal-head h2 {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.app.ledger-app .modal .two,
+.app.ledger-app .modal .three {
+  min-width: 0;
+}
+.app.ledger-app .modal label {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.app.ledger-app .report-row > span:not(:first-child),
+.app.ledger-app .report-head > b:not(:first-child) {
+  text-align: right;
+}
+.app.ledger-app .region-settings .template-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (prefers-color-scheme: dark) {
+  .app.ledger-app[data-theme='system'] {
+    --canvas: #111923;
+    --surface: #1a2533;
+    --ink: #edf3fc;
+    --muted: #b9c6d8;
+    --line: #3b4b60;
+    --control-line: #8596ac;
+    --accent-ink: #9fc8ff;
+    --accent-soft: #203b60;
+    --selected-ink: #cfe2ff;
+    --focus: #94bcff;
+    --negative: #ffb4bd;
+    --warning: #f1c277;
+    --warning-soft: #3e301b;
+    --gain: #a5dabb;
+    --gain-soft: #1c3529;
+  }
+}
+@media (max-width: 760px) {
+  .app.ledger-app .modal :is(.two, .three),
+  .app.ledger-app .region-settings .template-form {
+    grid-template-columns: 1fr;
+  }
+  .app.ledger-app .modal button.primary {
+    min-height: 44px;
+  }
+}
+
+/* Startup and confirmation states share the selected blue-white language. */
+.feedback-content {
+  display: contents;
+}
+.startup-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  color: #202a38;
+  background: #f4f7fc;
+}
+.startup-card {
+  width: min(520px, 100%);
+  padding: 32px;
+  border: 1px solid #d7dfe9;
+  border-radius: 10px;
+  background: #fff;
+  line-height: 1.6;
+  min-width: 0;
+}
+.startup-card h1 {
+  font-size: 24px;
+  margin: 0 0 16px;
+  line-height: 1.4;
+}
+.startup-card p {
+  font-size: 14px;
+  margin: 12px 0;
+}
+.startup-details {
+  margin: 24px 0;
+  padding-top: 16px;
+  border-top: 1px solid #d7dfe9;
+}
+.startup-details summary {
+  cursor: pointer;
+  font-size: 14px;
+}
+.startup-details pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    13px/1.6 'Segoe UI',
+    'Microsoft YaHei',
+    sans-serif;
+}
+.startup-card .primary {
+  background: #245ea8;
+  color: #fff;
+  border-radius: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+}
+.startup-card :is(button, summary):focus-visible,
+.confirm-dialog :is(button, input):focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 3px;
+}
+.startup-progress {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #eaf2fc;
+  border-top-color: #245ea8;
+  border-radius: 50%;
+  margin-bottom: 24px;
+  animation: startup-spin 0.9s linear infinite;
+}
+@keyframes startup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.confirm-backdrop {
+  background: #14203388;
+}
+.confirm-dialog {
+  border: 1px solid #d7dfe9;
+  border-radius: 10px;
+  padding: 24px;
+  color: #202a38;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+}
+.confirm-dialog p {
+  color: #202a38;
+  font-size: 14px;
+}
+.confirm-dialog .outline {
+  border: 1px solid #245ea8;
+  color: #245ea8;
+  background: #fff;
+}
+.confirm-dialog button {
+  min-height: 44px;
+}
+.confirm-dialog .confirm-suppress {
+  font-size: 14px;
+  color: #596579;
+}
+.toast,
+.working-notice {
+  background: #202a38;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .startup-card {
+    padding: 24px;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .startup-screen[data-theme='system'] {
+    background: #111923;
+    color: #edf3fc;
+  }
+  .startup-screen[data-theme='system'] .startup-card {
+    background: #1a2533;
+    border-color: #3b4b60;
+  }
+  .startup-screen[data-theme='system'] .startup-details {
+    border-color: #3b4b60;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .startup-progress {
+    animation: none;
+  }
+}
+
+/* Long names and unbroken SKU strings must not widen stock rows. */
+.ledger-app .region-inventory :is(.grow, .inventory-row-amount) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ledger-app .region-inventory .inventory-cost {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.ledger-app :is(.modal, .confirm-dialog) {
+  overscroll-behavior: contain;
+}
+.confirm-suppress {
+  min-height: 44px;
+}
+
+.ledger-app .calculation-notes p {
+  max-width: 68ch;
+}
+@media (prefers-color-scheme: dark) {
+  .startup-screen[data-theme='system'] :is(button, summary):focus-visible {
+    outline-color: #94bcff;
+  }
+}
+
+/* Confirmation is awaiting a decision; the business action has not run yet. */
+.feedback-content[inert] .working-notice {
+  visibility: hidden;
+}
+.report-scroll-hint {
+  display: none;
+}
+@media (max-width: 900px) {
+  .report-scroll-hint {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0 0 12px;
+  }
+}
+
+.ledger-app .modal-head .icon-btn {
+  color: var(--muted);
+  min-width: 40px;
+  min-height: 40px;
+}
+@media (max-width: 760px) {
+  .ledger-app .modal-head .icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+.ledger-app .image-placeholder {
+  color: var(--muted);
+  border-color: var(--control-line);
+}

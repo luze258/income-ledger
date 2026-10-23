@@ -1,3 +1,9 @@
+import {
+  defaultFinance,
+  validateFinance,
+  validateFinanceReferences,
+  validatePayment,
+} from './finance';
 import type { Backup, FeeTemplate, InventoryMovement, Item, ParsedImport } from './types';
 import { centsToYuan, dateKey, isDateKey, marginPercent, profitCents, yuanToCents } from './domain';
 
@@ -22,7 +28,7 @@ function validateItem(item: Item) {
     if (!isDateKey(item.saleDate)) throw new Error('卖出日期格式应为 YYYY-MM-DD');
     if (item.saleDate < item.purchaseDate) throw new Error('卖出日期不能早于购入日期');
   }
-  return item;
+  return validatePayment(item);
 }
 
 export function normalizeImportedItem(value: unknown): Item {
@@ -59,6 +65,19 @@ export function normalizeImportedItem(value: unknown): Item {
     platformFeeCents: cents('platformFeeCents', 'platformFee'),
     otherFeeCents: cents('otherFeeCents', 'otherFee'),
     saleDate: text(source.saleDate) || undefined,
+    paymentStatus: (text(source.paymentStatus) ||
+      (status === 'sold' ? 'historical' : undefined)) as Item['paymentStatus'],
+    receivedDate: text(source.receivedDate) || undefined,
+    receivedCents: cents('receivedCents', 'received'),
+    settlementExpectedCents: cents('settlementExpectedCents', 'settlementExpected'),
+    settlementReason:
+      source.settlementReason == null
+        ? undefined
+        : typeof source.settlementReason === 'string'
+          ? source.settlementReason
+          : (() => {
+              throw new Error('结算差额原因必须是文本');
+            })(),
     platform: text(source.platform) || undefined,
     note: text(source.note) || undefined,
     tags: Array.isArray(source.tags)
@@ -76,8 +95,7 @@ export function normalizeImportedItem(value: unknown): Item {
 export function parseJsonItems(input: string): ParsedImport {
   const document = JSON.parse(input);
   const isBackup = document?.format === 'income-ledger-backup';
-  if (isBackup && document.version !== 1 && document.version !== 2)
-    throw new Error('不支持的备份版本');
+  if (isBackup && ![1, 2, 3, 4].includes(document.version)) throw new Error('不支持的备份版本');
   const data = isBackup ? document.items : document;
   if (!Array.isArray(data)) throw new Error('JSON 顶层必须是记录数组');
   const items: Item[] = [];
@@ -123,7 +141,7 @@ export function parseJsonItems(input: string): ParsedImport {
         if (t?.id) ids.add(t.id);
       }
     }
-    const inventoryMovements = document.version === 2 ? document.inventoryMovements : [];
+    const inventoryMovements = document.version >= 2 ? document.inventoryMovements : [];
     if (!Array.isArray(inventoryMovements)) errors.push('库存变动记录格式不正确');
     else {
       const movementIds = new Set<string>();
@@ -160,8 +178,18 @@ export function parseJsonItems(input: string): ParsedImport {
         ))
     )
       errors.push('图片备份字段格式不正确');
+    let finance = defaultFinance();
+    if (document.version >= 3) {
+      try {
+        finance = validateFinance(document.finance);
+        validateFinanceReferences(finance, items);
+      } catch (error) {
+        errors.push(String(error));
+      }
+    }
     if (!errors.length)
       backup = {
+        finance,
         format: 'income-ledger-backup',
         version: document.version,
         exportedAt: document.exportedAt,
@@ -180,10 +208,12 @@ export function exportBackup(
   categories: string[],
   templates: FeeTemplate[],
   inventoryMovements: InventoryMovement[] = [],
+  finance = defaultFinance(),
 ) {
   const backup: Backup = {
     format: 'income-ledger-backup',
-    version: 2,
+    version: 4,
+    finance,
     exportedAt: new Date().toISOString(),
     items,
     categories,

@@ -19,4 +19,4 @@ jobs:
       - run: npm run check:versions
       - run: npm test
       - run: npx tsc --noEmit
-      - run: cargo test --manifest-path src-tauri/Cargo.toml
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --lib

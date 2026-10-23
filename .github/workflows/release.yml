@@ -19,6 +19,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
       - run: npm run check:versions
+      - run: npm run test
+      - run: npx tsc --noEmit
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --lib
       - name: Ensure tag matches the application version
         shell: pwsh
         run: |
@@ -31,12 +34,22 @@ jobs:
       - name: Prepare a portable release asset name
         shell: pwsh
         run: |
-          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
-          if ($null -eq $installer) {
-            throw '未找到 NSIS 安装包。'
+          $installers = @(Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' -File)
+          if ($installers.Count -ne 1) {
+            throw "预期找到 1 个 NSIS 安装包，实际找到 $($installers.Count) 个。"
           }
+
+          $installer = $installers[0]
           $version = node -p "require('./package.json').version"
-          Copy-Item -LiteralPath $installer.FullName -Destination "src-tauri/target/release/bundle/nsis/income-ledger_$($version)_x64-setup.exe"
+          $assetName = "income-ledger_$($version)_x64-setup.exe"
+          $assetPath = Join-Path $installer.DirectoryName $assetName
+
+          Copy-Item -LiteralPath $installer.FullName -Destination $assetPath
+          if (-not (Test-Path -LiteralPath $assetPath)) {
+            throw "未生成预期安装包：$assetName"
+          }
+
+          Write-Output "将上传安装包：$assetPath"
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true

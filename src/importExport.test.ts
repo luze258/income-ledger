@@ -108,7 +108,7 @@ describe('JSON validation', () => {
     expect(result.backup?.categories).toEqual(['鞋']);
     expect(result.backup?.templates).toEqual(templates);
     expect(result.backup?.items[0].imageData).toBe('data:image/png;base64,complete-image');
-    expect(result.backup?.version).toBe(2);
+    expect(result.backup?.version).toBe(4);
     expect(result.backup?.inventoryMovements).toEqual(movements);
   });
 });

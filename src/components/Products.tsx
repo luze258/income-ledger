@@ -1,11 +1,14 @@
+import { elapsedDays, paymentStatus, receiptReconciliation } from '../finance';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
 import { inventoryDays, money, profitCents, yuanToCents } from '../domain';
 import { AsyncButton } from '../actions';
 import { useFeedback } from '../feedback';
-import type { Item } from '../types';
+import type { FinanceState, Item } from '../types';
 import { Thumb } from './Thumb';
 import { Pagination } from './Pagination';
+
+export type ProductJump = 'stagnant' | 'lowProfit' | 'stock' | 'occupied' | 'oldStock';
 
 type SortKey = 'newest' | 'name' | 'purchaseAsc' | 'purchaseDesc' | 'profitDesc' | 'daysDesc';
 type SavedFilter = {
@@ -26,6 +29,7 @@ type SavedFilter = {
 
 export function Products({
   items,
+  finance,
   categories,
   onSell,
   onEdit,
@@ -38,8 +42,11 @@ export function Products({
   pageSize,
   stagnantDays,
   jump,
+  onReceipt,
+  lowProfitCents,
 }: {
   items: Item[];
+  finance: FinanceState;
   categories: string[];
   onSell: (item: Item) => void;
   onEdit: (item: Item) => void;
@@ -51,10 +58,13 @@ export function Products({
   imageRevisions: Record<string, number>;
   pageSize: number;
   stagnantDays: number;
-  jump?: 'stagnant' | 'lowProfit' | 'stock' | null;
+  jump?: { kind: ProductJump } | null;
+  lowProfitCents: number;
+  onReceipt: (item: Item) => void;
 }) {
   const { confirm } = useFeedback();
   const effectivePageSize = [10, 20, 50].includes(pageSize) ? pageSize : 10;
+  const [quickJump, setQuickJump] = useState<ProductJump | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('全部分类');
   const [status, setStatus] = useState('all');
@@ -102,6 +112,13 @@ export function Products({
               .includes(normalizedQuery) &&
             (category === '全部分类' || item.category === category) &&
             (status === 'all' || item.status === status) &&
+            (quickJump !== 'occupied' ||
+              ((item.status === 'in_stock' || paymentStatus(item) === 'pending') &&
+                elapsedDays(item.purchaseDate) > 15)) &&
+            (quickJump !== 'oldStock' ||
+              (item.status === 'in_stock' && inventoryDays(item) > 30)) &&
+            (quickJump !== 'lowProfit' ||
+              (item.status === 'sold' && profitCents(item) <= lowProfitCents)) &&
             (!platformFilter || item.platform === platformFilter) &&
             (!tagFilter ||
               item.tags.some((tag) =>
@@ -126,6 +143,8 @@ export function Products({
         }),
     [
       items,
+      quickJump,
+      lowProfitCents,
       normalizedQuery,
       category,
       status,
@@ -173,9 +192,15 @@ export function Products({
   );
   useEffect(() => {
     if (!jump) return;
-    setStatus(jump === 'lowProfit' ? 'sold' : 'in_stock');
-    if (jump === 'stagnant') setMinDays(String(stagnantDays));
-    if (jump === 'lowProfit') setProfitFilter('loss');
+    clearFilters();
+    setQuickJump(jump.kind);
+    setPage(1);
+    if (jump.kind === 'stagnant') {
+      setStatus('in_stock');
+      setMinDays(String(stagnantDays));
+    }
+    if (jump.kind === 'stock' || jump.kind === 'oldStock') setStatus('in_stock');
+    if (jump.kind === 'lowProfit') setStatus('sold');
   }, [jump, stagnantDays]);
   const pages = Math.max(1, Math.ceil(list.length / effectivePageSize));
   const safePage = Math.min(page, pages);
@@ -191,11 +216,19 @@ export function Products({
       .filter(Boolean)
       .join(' · ') || '已保存筛选';
   const allFilteredSelected = list.length > 0 && list.every((item) => selected.has(item.id));
-  const advancedCount = [platformFilter, tagFilter, minPrice, maxPrice, minDays, maxDays].filter(
-    Boolean,
-  ).length;
+  const advancedCount = [
+    platformFilter,
+    tagFilter,
+    minPrice,
+    maxPrice,
+    minDays,
+    maxDays,
+    date,
+    profitFilter !== 'all' ? profitFilter : '',
+  ].filter(Boolean).length;
 
   const clearFilters = () => {
+    setQuickJump(null);
     setQuery('');
     setCategory('全部分类');
     setStatus('all');
@@ -210,6 +243,8 @@ export function Products({
     setMaxDays('');
   };
   const clearAdvancedFilters = () => {
+    setDate('');
+    setProfitFilter('all');
     setPlatformFilter('');
     setTagFilter('');
     setMinPrice('');
@@ -219,7 +254,7 @@ export function Products({
   };
 
   return (
-    <section className="panel">
+    <section className="panel phase2-products">
       <div className="filter-toolbar-wrap">
         <div className="filter-toolbar">
           <div className="search">
@@ -241,15 +276,6 @@ export function Products({
             <option value="in_stock">库存中</option>
             <option value="sold">已售出</option>
           </select>
-          <select
-            aria-label="盈亏筛选"
-            value={profitFilter}
-            onChange={(event) => setProfitFilter(event.target.value)}
-          >
-            <option value="all">全部盈亏</option>
-            <option value="profit">盈利</option>
-            <option value="loss">亏损</option>
-          </select>
           <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)}>
             <option value="newest">最新添加</option>
             <option value="name">名称排序</option>
@@ -258,15 +284,25 @@ export function Products({
             <option value="profitDesc">利润从高到低</option>
             <option value="daysDesc">库存天数从高到低</option>
           </select>
-          <input
-            className="date-filter"
-            aria-label="交易日期筛选"
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-          />
         </div>
       </div>
+      {quickJump && (
+        <div className="active-filter">
+          当前快捷视图：
+          {
+            {
+              stock: '待售库存',
+              stagnant: '滞销库存',
+              lowProfit: '低利润 / 亏损',
+              occupied: '付款超过15天仍占用本金',
+              oldStock: '库存超过30天',
+            }[quickJump]
+          }
+          <AsyncButton className="text-button" onClick={clearFilters}>
+            清除快捷视图
+          </AsyncButton>
+        </div>
+      )}
       <div className="advanced-filter-toggle">
         <AsyncButton className="outline" onClick={() => setAdvancedOpen((value) => !value)}>
           {advancedOpen ? '收起高级筛选' : `高级筛选${advancedCount ? `（${advancedCount}）` : ''}`}
@@ -284,6 +320,28 @@ export function Products({
       </div>
       {advancedOpen && (
         <div className="advanced-filter-panel">
+          <label>
+            盈亏{' '}
+            <select
+              aria-label="盈亏筛选"
+              value={profitFilter}
+              onChange={(event) => setProfitFilter(event.target.value)}
+            >
+              <option value="all">全部盈亏</option>
+              <option value="profit">盈利</option>
+              <option value="loss">亏损</option>
+            </select>
+          </label>
+          <label>
+            交易日期{' '}
+            <input
+              className="date-filter"
+              aria-label="交易日期筛选"
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+            />
+          </label>
           <label>
             平台
             <select
@@ -358,6 +416,7 @@ export function Products({
           <AsyncButton
             className="outline"
             onClick={() => {
+              clearFilters();
               setStatus('in_stock');
               setSort('newest');
             }}
@@ -367,6 +426,7 @@ export function Products({
           <AsyncButton
             className="outline"
             onClick={() => {
+              clearFilters();
               setStatus('sold');
               setProfitFilter('profit');
               setSort('profitDesc');
@@ -377,7 +437,9 @@ export function Products({
           <AsyncButton
             className="outline"
             onClick={() => {
+              clearFilters();
               setStatus('in_stock');
+              setMinDays(String(stagnantDays));
               setSort('daysDesc');
             }}
           >
@@ -418,6 +480,7 @@ export function Products({
               <AsyncButton
                 className="outline"
                 onClick={() => {
+                  setQuickJump(null);
                   setQuery(savedView.query);
                   setCategory(savedView.category);
                   setStatus(savedView.status);
@@ -465,12 +528,12 @@ export function Products({
           <AsyncButton className="outline" onClick={clearFilters}>
             清空筛选
           </AsyncButton>
-          <span className="filter-count">{list.length} 件商品</span>
+          <span className="filter-count">{list.length} 条记录</span>
         </div>
       </div>
       {selected.size > 0 && (
         <div className="batch-bar">
-          <b>已选 {selected.size} 件</b>
+          <b>已选 {selected.size} 条记录</b>
           <select value={batchCategory} onChange={(event) => setBatchCategory(event.target.value)}>
             {categories.map((value) => (
               <option key={value}>{value}</option>
@@ -579,21 +642,15 @@ export function Products({
           <div className="grow">
             <b>{item.name}</b>
             <small>
-              {item.category} · 购入 {money(item.purchaseCents)} · 数量 {item.quantity ?? 1} ·{' '}
-              {item.purchaseDate}
-              {item.expectedSaleCents != null ? ` · 预计售价 ${money(item.expectedSaleCents)}` : ''}
-              {item.status === 'in_stock' ? ` · 库存 ${inventoryDays(item)} 天` : ''}
+              {item.category} · {item.quantity ?? 1} 件
+              {item.status === 'in_stock'
+                ? ` · 购入单价 ${money(item.purchaseCents)} · 库存 ${inventoryDays(item)} 天`
+                : ` · ${receiptReconciliation(item, finance).status === 'pending' ? '差额待核对' : paymentStatus(item) === 'pending' ? '待回款' : paymentStatus(item) === 'received' ? '已回款' : '历史回款待确认'}`}
             </small>
-            {item.tags.length > 0 && (
-              <div className="tag-list">
-                {item.tags.map((tag, index) => (
-                  <span key={`${tag}-${index}`}>{tag}</span>
-                ))}
-              </div>
-            )}
           </div>
           {item.status === 'sold' ? (
             <span className={profitCents(item) >= 0 ? 'gain result' : 'loss result'}>
+              <small>售出净收益</small>
               {profitCents(item) >= 0 ? '+' : ''}
               {money(profitCents(item))}
             </span>
@@ -602,25 +659,32 @@ export function Products({
               售出
             </AsyncButton>
           )}
-          <AsyncButton className="outline" onClick={() => onEdit(item)}>
-            编辑
-          </AsyncButton>
+          {item.status === 'sold' &&
+            (paymentStatus(item) !== 'received' ||
+              receiptReconciliation(item, finance).status === 'pending') && (
+              <AsyncButton className="outline" onClick={() => onReceipt(item)}>
+                核对回款
+              </AsyncButton>
+            )}
           <AsyncButton
-            className="icon-btn"
-            title="查看详情"
+            className="outline"
             aria-label={`查看商品详情：${item.name}`}
             onClick={() => onDetails(item)}
           >
-            i
+            详情
           </AsyncButton>
-          <AsyncButton
-            className="icon-btn"
-            title="移入回收站"
-            aria-label={`将${item.name}移入回收站`}
-            onClick={() => onDelete(item.id)}
-          >
-            <Trash2 size={16} />
-          </AsyncButton>
+          <details className="row-more">
+            <summary aria-label={`更多操作：${item.name}`}>更多</summary>
+            <div className="row-more-menu">
+              <AsyncButton className="outline" onClick={() => onEdit(item)}>
+                编辑
+              </AsyncButton>
+              <AsyncButton className="danger" onClick={() => onDelete(item.id)}>
+                <Trash2 size={15} />
+                移入回收站
+              </AsyncButton>
+            </div>
+          </details>
         </div>
       ))}
       {!list.length && <div className="empty">没有匹配的商品</div>}

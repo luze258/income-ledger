@@ -100,6 +100,55 @@ describe('SQLite storage path', () => {
     expect(JSON.stringify({ imageData: null })).toContain('"imageData":null');
   });
 
+  it('reads reconciliation fields from SQLite and includes them in writes and backups', async () => {
+    const paid = {
+      ...record,
+      status: 'sold' as const,
+      saleDate: '2026-01-02',
+      saleCents: 2000,
+      platformFeeCents: 100,
+      paymentStatus: 'received' as const,
+      receivedDate: '2026-01-03',
+      receivedCents: 1800,
+      settlementExpectedCents: 1900,
+      settlementReason: '额外平台费1元',
+    };
+    const db = {
+      select: vi.fn(async (query: string) => {
+        if (!query.includes('FROM items')) return [];
+        expect(query).toContain('settlement_expected_cents');
+        expect(query).toContain('settlement_reason');
+        return [
+          {
+            id: paid.id,
+            name: paid.name,
+            category: paid.category,
+            purchase_cents: paid.purchaseCents,
+            quantity: 1,
+            purchase_date: paid.purchaseDate,
+            status: 'sold',
+            sale_cents: 2000,
+            platform_fee_cents: 100,
+            sale_date: paid.saleDate,
+            payment_status: 'received',
+            received_date: paid.receivedDate,
+            received_cents: 1800,
+            settlement_expected_cents: 1900,
+            settlement_reason: paid.settlementReason,
+            tags_json: JSON.stringify(paid.tags),
+            created_at: 1,
+          },
+        ];
+      }),
+    };
+    vi.mocked(Database.load).mockResolvedValue(db as never);
+    const storage = await import('./storage');
+    expect((await storage.initializeStorage()).items[0]).toMatchObject(paid);
+    expect((await storage.loadBackupItems())[0]).toMatchObject(paid);
+    await storage.persistItem(paid);
+    expect(vi.mocked(invoke)).toHaveBeenLastCalledWith('upsert_item', { record: paid });
+  });
+
   it('restores explicit backup image states while preserving legacy image omissions', async () => {
     const storage = await import('./storage');
     const baseBackup = {

@@ -88,6 +88,19 @@ const MIGRATION_4: &str = r#"
     ON inventory_movements(item_id, created_at DESC);
 "#;
 
+const MIGRATION_5: &str = r#"
+  ALTER TABLE items ADD COLUMN payment_status TEXT CHECK (payment_status IN ('pending','received','historical'));
+  ALTER TABLE items ADD COLUMN received_date TEXT;
+  ALTER TABLE items ADD COLUMN received_cents INTEGER CHECK (received_cents >= 0);
+  UPDATE items SET payment_status='historical' WHERE status='sold';
+  CREATE TABLE ledger_finance (id INTEGER PRIMARY KEY CHECK (id=1), value TEXT NOT NULL);
+"#;
+
+const MIGRATION_6: &str = r#"
+  ALTER TABLE items ADD COLUMN settlement_expected_cents INTEGER CHECK (settlement_expected_cents >= 0);
+  ALTER TABLE items ADD COLUMN settlement_reason TEXT;
+"#;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let migrations = migrations();
@@ -155,6 +168,18 @@ fn migrations() -> Vec<Migration> {
             version: 4,
             description: "inventory_movements",
             sql: MIGRATION_4,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 5,
+            description: "receipts_and_finance",
+            sql: MIGRATION_5,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 6,
+            description: "receipt_reconciliation",
+            sql: MIGRATION_6,
             kind: MigrationKind::Up,
         },
     ]
@@ -233,6 +258,102 @@ fn validate_item(value: &serde_json::Value) -> Result<(), String> {
     if item.get("status").and_then(serde_json::Value::as_str) == Some("sold") {
         non_negative_integer(value, "saleCents", true)?;
         non_empty_string(value, "saleDate")?;
+    }
+    let status = value
+        .get("paymentStatus")
+        .and_then(serde_json::Value::as_str);
+    if let Some(status) = status {
+        if !["pending", "received", "historical"].contains(&status) {
+            return Err("回款状态无效".into());
+        }
+    }
+    non_negative_integer(value, "receivedCents", false)?;
+    non_negative_integer(value, "settlementExpectedCents", false)?;
+    if !value["settlementReason"].is_null() && !value["settlementReason"].is_string() {
+        return Err("结算差额原因必须是文本".into());
+    }
+    if status != Some("received")
+        && (!value["settlementExpectedCents"].is_null() || !value["settlementReason"].is_null())
+    {
+        return Err("未到账不能有结算核对信息".into());
+    }
+    if status == Some("received") {
+        non_negative_integer(value, "receivedCents", true)?;
+        non_empty_string(value, "receivedDate")?;
+        let received = value["receivedDate"].as_str().unwrap();
+        if !valid_date(received) || received < value["saleDate"].as_str().unwrap_or("") {
+            return Err("到账日期无效或早于卖出日期".into());
+        }
+    } else if !value["receivedDate"].is_null() || !value["receivedCents"].is_null() {
+        return Err("未到账不能有到账金额和日期".into());
+    }
+    if value["status"] == "in_stock" && status.is_some() {
+        return Err("库存商品不能记录回款".into());
+    }
+    Ok(())
+}
+
+fn valid_date(date: &str) -> bool {
+    let parts: Vec<_> = date.split('-').collect();
+    if parts.len() != 3 || parts[0].len() != 4 || parts[1].len() != 2 || parts[2].len() != 2 {
+        return false;
+    }
+    let parsed: Vec<_> = parts
+        .iter()
+        .map(|v| v.parse::<u32>().unwrap_or(0))
+        .collect();
+    let (y, m, d) = (parsed[0], parsed[1], parsed[2]);
+    let max = match m {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => {
+            if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) {
+                29
+            } else {
+                28
+            }
+        }
+        _ => 0,
+    };
+    y >= 100 && d >= 1 && d <= max
+}
+
+fn validate_finance(value: &serde_json::Value) -> Result<(), String> {
+    non_negative_integer(value, "capitalLimitCents", true)?;
+    non_negative_integer(value, "cashCents", false)?;
+    if !value["cashCents"].is_null() && !value["cashCheckedDate"].as_str().is_some_and(valid_date) {
+        return Err("现金核对日期无效".into());
+    }
+    let records = value["afterSales"].as_array().ok_or("售后记录必须是数组")?;
+    let mut ids = std::collections::HashSet::new();
+    for a in records {
+        for field in ["id", "itemId", "reason"] {
+            non_empty_string(a, field)?;
+        }
+        if !ids.insert(a["id"].as_str().unwrap()) {
+            return Err("售后ID重复".into());
+        }
+        if !a["date"].as_str().is_some_and(valid_date) {
+            return Err("售后日期无效".into());
+        }
+        for field in ["refundCents", "quantity", "lossCents"] {
+            non_negative_integer(a, field, true)?;
+        }
+        let q = a["quantity"].as_i64().unwrap();
+        match a["kind"].as_str() {
+            Some("partial_refund") if q == 0 => {}
+            Some("return") if q > 0 => {}
+            Some("write_off") if q > 0 && a["refundCents"] == 0 => {}
+            _ => return Err("售后类型与数量不匹配".into()),
+        }
+        if !a["recoveredDate"].is_null()
+            && (a["kind"] != "return"
+                || a["returnedItemId"].as_str().is_none()
+                || !a["recoveredDate"].as_str().is_some_and(valid_date)
+                || a["recoveredDate"].as_str() < a["date"].as_str())
+        {
+            return Err("收回商品日期无效".into());
+        }
     }
     Ok(())
 }
@@ -321,6 +442,12 @@ fn validate_commit_data(data: &serde_json::Value) -> Result<(), String> {
     if let Some(items) = data.get("items") {
         validate_items(items)?;
     }
+    if let Some(items) = data.get("itemUpdates") {
+        validate_items(items)?;
+    }
+    if let Some(finance) = data.get("finance") {
+        validate_finance(finance)?;
+    }
     if let Some(categories) = data.get("categories") {
         validate_categories(categories)?;
     }
@@ -347,15 +474,15 @@ async fn sync_items(
     .bind(records).execute(&mut **tx).await.map_err(|error| error.to_string())?;
     sqlx::query(r#"INSERT INTO items
     (id,name,category,purchase_cents,quantity,purchase_date,status,expected_sale_cents,sale_cents,
-     shipping_cents,platform_fee_cents,other_fee_cents,sale_date,platform,note,tags_json,image_data,created_at,deleted_at)
+     shipping_cents,platform_fee_cents,other_fee_cents,sale_date,platform,note,tags_json,image_data,created_at,deleted_at,payment_status,received_date,received_cents,settlement_expected_cents,settlement_reason)
     SELECT json_extract(value,'$.id'),json_extract(value,'$.name'),json_extract(value,'$.category'),
      json_extract(value,'$.purchaseCents'),COALESCE(json_extract(value,'$.quantity'),1),json_extract(value,'$.purchaseDate'),json_extract(value,'$.status'),
      json_extract(value,'$.expectedSaleCents'),json_extract(value,'$.saleCents'),
      json_extract(value,'$.shippingCents'),json_extract(value,'$.platformFeeCents'),json_extract(value,'$.otherFeeCents'),
      json_extract(value,'$.saleDate'),json_extract(value,'$.platform'),json_extract(value,'$.note'),
      COALESCE(json_extract(value,'$.tags'),'[]'),json_extract(value,'$.imageData'),
-     json_extract(value,'$.createdAt'),json_extract(value,'$.deletedAt') FROM json_each(?) WHERE true
-    ON CONFLICT(id) DO UPDATE SET name=excluded.name,category=excluded.category,purchase_cents=excluded.purchase_cents,quantity=items.quantity,purchase_date=excluded.purchase_date,status=excluded.status,expected_sale_cents=excluded.expected_sale_cents,sale_cents=excluded.sale_cents,shipping_cents=excluded.shipping_cents,platform_fee_cents=excluded.platform_fee_cents,other_fee_cents=excluded.other_fee_cents,sale_date=excluded.sale_date,platform=excluded.platform,note=excluded.note,tags_json=excluded.tags_json,image_data=COALESCE(excluded.image_data,items.image_data),deleted_at=excluded.deleted_at
+     json_extract(value,'$.createdAt'),json_extract(value,'$.deletedAt'),CASE WHEN json_extract(value,'$.status')='sold' THEN COALESCE(json_extract(value,'$.paymentStatus'),'historical') END,json_extract(value,'$.receivedDate'),json_extract(value,'$.receivedCents'),json_extract(value,'$.settlementExpectedCents'),json_extract(value,'$.settlementReason') FROM json_each(?) WHERE true
+    ON CONFLICT(id) DO UPDATE SET name=excluded.name,category=excluded.category,purchase_cents=excluded.purchase_cents,quantity=items.quantity,purchase_date=excluded.purchase_date,status=excluded.status,expected_sale_cents=excluded.expected_sale_cents,sale_cents=excluded.sale_cents,shipping_cents=excluded.shipping_cents,platform_fee_cents=excluded.platform_fee_cents,other_fee_cents=excluded.other_fee_cents,sale_date=excluded.sale_date,platform=excluded.platform,note=excluded.note,tags_json=excluded.tags_json,image_data=COALESCE(excluded.image_data,items.image_data),deleted_at=excluded.deleted_at,payment_status=excluded.payment_status,received_date=excluded.received_date,received_cents=excluded.received_cents,settlement_expected_cents=excluded.settlement_expected_cents,settlement_reason=excluded.settlement_reason
   "#).bind(records).execute(&mut **tx).await.map_err(|error| error.to_string())?;
     Ok(())
 }
@@ -381,6 +508,12 @@ async fn commit_in_pool(pool: &sqlx::SqlitePool, data: &serde_json::Value) -> Re
     let mut tx = pool.begin().await.map_err(|error| error.to_string())?;
     if let Some(items) = data.get("items") {
         write_items(&mut tx, items).await?;
+    }
+    if let Some(items) = data.get("itemUpdates") {
+        sync_items(&mut tx, &items.to_string()).await?;
+    }
+    if let Some(finance) = data.get("finance") {
+        sqlx::query("INSERT INTO ledger_finance(id,value) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value").bind(finance.to_string()).execute(&mut *tx).await.map_err(|e| e.to_string())?;
     }
     if let Some(categories) = data.get("categories") {
         sqlx::query("DELETE FROM categories")
@@ -659,7 +792,9 @@ async fn permanently_delete_items(
 
 #[cfg(test)]
 mod tests {
-    use super::{migrations, MIGRATION_1, MIGRATION_2, MIGRATION_3, MIGRATION_4};
+    use super::{
+        migrations, MIGRATION_1, MIGRATION_2, MIGRATION_3, MIGRATION_4, MIGRATION_5, MIGRATION_6,
+    };
     use futures_core::future::BoxFuture;
     use serde_json::json;
     use sqlx::Row;
@@ -700,6 +835,9 @@ mod tests {
         sqlx::raw_sql(MIGRATION_1).execute(&pool).await.unwrap();
         sqlx::raw_sql(MIGRATION_2).execute(&pool).await.unwrap();
         sqlx::raw_sql(MIGRATION_3).execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_4).execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_5).execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_6).execute(&pool).await.unwrap();
         let valid = json!({"items":[{"id":"original","name":"test","category":"test","purchaseCents":100,"purchaseDate":"2026-01-01","status":"in_stock","tags":[],"createdAt":1}]});
         super::commit_in_pool(&pool, &valid).await.unwrap();
         assert!(
@@ -766,6 +904,8 @@ mod tests {
         sqlx::raw_sql(MIGRATION_1).execute(&pool).await.unwrap();
         sqlx::raw_sql(MIGRATION_2).execute(&pool).await.unwrap();
         sqlx::raw_sql(MIGRATION_3).execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_5).execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_6).execute(&pool).await.unwrap();
         let base = json!({
           "id":"pictured", "name":"带图商品", "category":"鞋", "purchaseCents":100,
           "purchaseDate":"2026-01-01", "status":"in_stock", "tags":[], "createdAt":1
@@ -872,7 +1012,7 @@ mod tests {
                 .fetch_all(&pool)
                 .await
                 .unwrap();
-        assert_eq!(versions, vec![1, 2, 3, 4]);
+        assert_eq!(versions, vec![1, 2, 3, 4, 5, 6]);
         migrator.run(&pool).await.unwrap();
         let mut changed = migrations();
         changed[1].sql = "SELECT 1;";
@@ -903,6 +1043,8 @@ mod tests {
         sqlx::raw_sql(MIGRATION_1).execute(&pool).await.unwrap();
         sqlx::raw_sql(MIGRATION_2).execute(&pool).await.unwrap();
         sqlx::raw_sql(MIGRATION_3).execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_5).execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_6).execute(&pool).await.unwrap();
         sqlx::raw_sql(MIGRATION_4).execute(&pool).await.unwrap();
         let original = json!({
           "id":"stock-item", "name":"库存商品", "category":"鞋", "purchaseCents":100,
@@ -937,7 +1079,14 @@ mod tests {
     #[tokio::test]
     async fn partial_sale_keeps_remaining_stock_and_creates_a_sold_record() {
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
-        for migration in [MIGRATION_1, MIGRATION_2, MIGRATION_3, MIGRATION_4] {
+        for migration in [
+            MIGRATION_1,
+            MIGRATION_2,
+            MIGRATION_3,
+            MIGRATION_4,
+            MIGRATION_5,
+            MIGRATION_6,
+        ] {
             sqlx::raw_sql(migration).execute(&pool).await.unwrap();
         }
         let original = json!({
@@ -979,7 +1128,14 @@ mod tests {
     #[tokio::test]
     async fn complete_backup_restore_replaces_inventory_history_with_items() {
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
-        for migration in [MIGRATION_1, MIGRATION_2, MIGRATION_3, MIGRATION_4] {
+        for migration in [
+            MIGRATION_1,
+            MIGRATION_2,
+            MIGRATION_3,
+            MIGRATION_4,
+            MIGRATION_5,
+            MIGRATION_6,
+        ] {
             sqlx::raw_sql(migration).execute(&pool).await.unwrap();
         }
         sqlx::query("INSERT INTO inventory_movements(id,item_id,kind,quantity_delta,quantity_before,quantity_after,shipping_cents,platform_fee_value,other_fee_cents,created_at) VALUES('old','removed','adjustment',1,1,2,0,0,0,1)")
@@ -1013,7 +1169,14 @@ mod tests {
     #[tokio::test]
     async fn missing_quantity_preserves_existing_inventory_quantity() {
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
-        for migration in [MIGRATION_1, MIGRATION_2, MIGRATION_3] {
+        for migration in [
+            MIGRATION_1,
+            MIGRATION_2,
+            MIGRATION_3,
+            MIGRATION_4,
+            MIGRATION_5,
+            MIGRATION_6,
+        ] {
             sqlx::raw_sql(migration).execute(&pool).await.unwrap();
         }
         let full = json!({
@@ -1025,11 +1188,134 @@ mod tests {
           "id":"quantity-item", "name":"更新后的数量商品", "category":"鞋", "purchaseCents":100,
           "purchaseDate":"2026-01-01", "status":"in_stock", "tags":[], "createdAt":1
         });
-        super::upsert_in_pool(&pool, &missing_quantity).await.unwrap();
-        let quantity: i64 = sqlx::query_scalar("SELECT quantity FROM items WHERE id='quantity-item'")
+        super::upsert_in_pool(&pool, &missing_quantity)
+            .await
+            .unwrap();
+        let quantity: i64 =
+            sqlx::query_scalar("SELECT quantity FROM items WHERE id='quantity-item'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(quantity, 3);
+    }
+    #[tokio::test]
+    async fn reconciliation_migration_preserves_receipts_and_restores_reason_atomically() {
+        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
+        for migration in [
+            MIGRATION_1,
+            MIGRATION_2,
+            MIGRATION_3,
+            MIGRATION_4,
+            MIGRATION_5,
+        ] {
+            sqlx::raw_sql(migration).execute(&pool).await.unwrap();
+        }
+        sqlx::query("INSERT INTO items(id,name,category,purchase_cents,quantity,purchase_date,status,sale_cents,platform_fee_cents,sale_date,payment_status,received_cents,received_date,tags_json,created_at) VALUES('paid','已到账','鞋',40000,1,'2026-10-13','sold',45000,1000,'2026-10-18','received',43000,'2026-10-23','[]',1)").execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_6).execute(&pool).await.unwrap();
+        let row = sqlx::query("SELECT payment_status,received_cents,received_date,settlement_expected_cents,settlement_reason FROM items WHERE id='paid'").fetch_one(&pool).await.unwrap();
+        assert_eq!(row.get::<String, _>("payment_status"), "received");
+        assert_eq!(row.get::<i64, _>("received_cents"), 43000);
+        assert_eq!(row.get::<String, _>("received_date"), "2026-10-23");
+        assert!(row
+            .get::<Option<i64>, _>("settlement_expected_cents")
+            .is_none());
+        assert!(row.get::<Option<String>, _>("settlement_reason").is_none());
+        let paid = json!({"id":"paid","name":"已到账","category":"鞋","purchaseCents":40000,"quantity":1,"purchaseDate":"2026-10-13","status":"sold","saleCents":45000,"platformFeeCents":1000,"saleDate":"2026-10-18","paymentStatus":"received","receivedDate":"2026-10-23","receivedCents":43000,"settlementExpectedCents":44000,"settlementReason":"额外结算费10元","tags":[],"createdAt":1});
+        super::upsert_in_pool(&pool, &paid).await.unwrap();
+        let row = sqlx::query(
+            "SELECT settlement_expected_cents,settlement_reason FROM items WHERE id='paid'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(row.get::<i64, _>("settlement_expected_cents"), 44000);
+        assert_eq!(row.get::<String, _>("settlement_reason"), "额外结算费10元");
+        // 完整恢复和逐笔更新共用写入路径；验证恢复保留核对信息。
+        super::commit_in_pool(&pool, &json!({"items":[paid]}))
+            .await
+            .unwrap();
+        let reason: String =
+            sqlx::query_scalar("SELECT settlement_reason FROM items WHERE id='paid'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(reason, "额外结算费10元");
+        let state = json!({"capitalLimitCents":800000,"afterSales":[]});
+        super::commit_in_pool(&pool, &json!({"finance":state}))
+            .await
+            .unwrap();
+        sqlx::raw_sql("CREATE TRIGGER reject_reconciliation_finance BEFORE UPDATE ON ledger_finance BEGIN SELECT RAISE(ABORT,'simulated failure'); END;").execute(&pool).await.unwrap();
+        let mut edited = paid.clone();
+        edited["settlementReason"] = json!("不应保存的原因");
+        assert!(
+            super::commit_in_pool(&pool, &json!({"itemUpdates":[edited],"finance":state}))
+                .await
+                .is_err()
+        );
+        let reason: String =
+            sqlx::query_scalar("SELECT settlement_reason FROM items WHERE id='paid'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(reason, "额外结算费10元");
+        let mut invalid = paid.clone();
+        invalid["settlementExpectedCents"] = json!(-1);
+        assert!(super::upsert_in_pool(&pool, &invalid).await.is_err());
+        invalid = paid.clone();
+        invalid["settlementReason"] = json!(42);
+        assert!(super::upsert_in_pool(&pool, &invalid).await.is_err());
+        invalid = paid.clone();
+        invalid["paymentStatus"] = json!("pending");
+        invalid.as_object_mut().unwrap().remove("receivedCents");
+        invalid.as_object_mut().unwrap().remove("receivedDate");
+        assert!(super::upsert_in_pool(&pool, &invalid).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn receipts_migrate_without_inventing_dates_and_finance_rolls_back_with_stock() {
+        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
+        for migration in [MIGRATION_1, MIGRATION_2, MIGRATION_3, MIGRATION_4] {
+            sqlx::raw_sql(migration).execute(&pool).await.unwrap();
+        }
+        sqlx::query("INSERT INTO items(id,name,category,purchase_cents,purchase_date,status,sale_cents,sale_date,tags_json,created_at) VALUES('old','旧交易','鞋',40000,'2026-10-13','sold',45000,'2026-10-18','[]',1)").execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_5).execute(&pool).await.unwrap();
+        sqlx::raw_sql(MIGRATION_6).execute(&pool).await.unwrap();
+        let row = sqlx::query(
+            "SELECT payment_status,received_date,received_cents FROM items WHERE id='old'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(row.get::<String, _>("payment_status"), "historical");
+        assert!(row.get::<Option<String>, _>("received_date").is_none());
+        assert!(row.get::<Option<i64>, _>("received_cents").is_none());
+        let paid = json!({"id":"old","name":"旧交易","category":"鞋","purchaseCents":40000,"purchaseDate":"2026-10-13","status":"sold","saleCents":45000,"saleDate":"2026-10-18","paymentStatus":"received","receivedDate":"2026-10-23","receivedCents":44000,"tags":[],"createdAt":1});
+        super::upsert_in_pool(&pool, &paid).await.unwrap();
+        let received: i64 = sqlx::query_scalar("SELECT received_cents FROM items WHERE id='old'")
             .fetch_one(&pool)
             .await
             .unwrap();
-        assert_eq!(quantity, 3);
+        assert_eq!(received, 44000);
+        let state = json!({"capitalLimitCents":800000,"afterSales":[]});
+        super::commit_in_pool(&pool, &json!({"finance":state}))
+            .await
+            .unwrap();
+        sqlx::raw_sql("CREATE TRIGGER reject_finance BEFORE UPDATE ON ledger_finance BEGIN SELECT RAISE(ABORT,'simulated failure'); END;").execute(&pool).await.unwrap();
+        let returned = json!({"id":"return","name":"退回商品","category":"鞋","purchaseCents":40000,"quantity":1,"purchaseDate":"2026-10-13","status":"in_stock","tags":[],"createdAt":2});
+        assert!(
+            super::commit_in_pool(&pool, &json!({"itemUpdates":[returned],"finance":state}))
+                .await
+                .is_err()
+        );
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM items WHERE id='return'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count, 0);
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM items WHERE id='old'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count, 1);
     }
 }

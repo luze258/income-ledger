@@ -15,6 +15,13 @@ export type Item = {
   platformFeeCents?: number;
   otherFeeCents?: number;
   saleDate?: string;
+  paymentStatus?: 'pending' | 'received' | 'historical';
+  receivedDate?: string;
+  receivedCents?: number;
+  /** 核对时的预计结算额（扣平台费、未扣售后退款），旧记录缺省时按原成交计算。 */
+  settlementExpectedCents?: number;
+  /** 实际到账与预计额不一致时的核对原因；留空表示待核对。 */
+  settlementReason?: string;
   platform?: string;
   note?: string;
   tags: string[];
@@ -68,15 +75,37 @@ export type FeeTemplate = {
 
 export type Backup = {
   format: 'income-ledger-backup';
-  version: 1 | 2;
+  version: 1 | 2 | 3 | 4;
   exportedAt: string;
   items: Item[];
   categories: string[];
   templates: FeeTemplate[];
   /** v1 备份没有此字段；导入时按空历史处理。 */
   inventoryMovements?: InventoryMovement[];
+  finance?: FinanceState;
   /** 新版完整备份显式记录每条商品的图片状态，null 表示该商品没有图片。 */
   imageDataByItemId?: Record<string, string | null>;
+};
+export type AfterSale = {
+  id: string;
+  itemId: string;
+  kind: 'return' | 'partial_refund' | 'write_off';
+  date: string;
+  refundCents: number;
+  quantity: number;
+  lossCents: number;
+  reason: string;
+  /** 退款已由平台直接从实际到账额中扣除，用于避免二次扣减。 */
+  deductedFromReceipt?: boolean;
+  returnedItemId?: string;
+  /** 退回商品确认收回的日期；缺省表示尚未收回。 */
+  recoveredDate?: string;
+};
+export type FinanceState = {
+  capitalLimitCents: number;
+  cashCents?: number;
+  cashCheckedDate?: string;
+  afterSales: AfterSale[];
 };
 export type ParsedImport = {
   items: Item[];

@@ -1,6 +1,6 @@
 [package]
 name = "income_ledger"
-version = "2.2.5"
+version = "2.3.1"
 description = "收益账本桌面应用"
 authors = ["路泽"]
 license = "MIT"

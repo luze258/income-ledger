@@ -1,0 +1,29 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "收益账本测试版",
+  "mainBinaryName": "income-ledger-test",
+  "identifier": "com.incomeledger.desktop.acceptance",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "收益账本测试版 · 独立数据",
+        "width": 1200,
+        "height": 820,
+        "minWidth": 720,
+        "minHeight": 540,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {
+    "shortDescription": "使用独立本地数据的收益账本桌面验收版。",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "startMenuFolder": "收益账本测试版"
+      }
+    }
+  }
+}

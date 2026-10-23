@@ -8,7 +8,7 @@ export type LedgerPreferences = {
 
 export const defaultPreferences: LedgerPreferences = {
   pageSize: 10,
-  stagnantDays: 90,
+  stagnantDays: 30,
   lowProfitCents: 0,
   lowStockCount: 0,
   lastTab: '首页',

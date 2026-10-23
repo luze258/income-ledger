@@ -5,6 +5,8 @@ import { ErrorBoundary } from './ErrorBoundary';
 import './styles.css';
 import './overrides.css';
 import './chart.css';
+import './layout.css';
+import './app.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('未找到应用根节点');
